@@ -1,0 +1,2339 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>教培机构客户信息管理系统</title>
+    <!-- Tailwind CSS v3 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <!-- Tailwind 配置 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#2563eb',
+                        secondary: '#64748b',
+                        success: '#10b981',
+                        warning: '#f59e0b',
+                        danger: '#ef4444',
+                        light: '#f8fafc',
+                        dark: '#1e293b'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif']
+                    },
+                    boxShadow: {
+                        card: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                        'card-hover': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)'
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .transition-all-300 {
+                transition: all 0.3s ease;
+            }
+            .glass-effect {
+                background: rgba(255, 255, 255, 0.7);
+                backdrop-filter: blur(10px);
+                -webkit-backdrop-filter: blur(10px);
+            }
+            .scrollbar-thin {
+                scrollbar-width: thin;
+            }
+            .scrollbar-thin::-webkit-scrollbar {
+                width: 6px;
+            }
+            .scrollbar-thin::-webkit-scrollbar-track {
+                background: #f1f5f9;
+            }
+            .scrollbar-thin::-webkit-scrollbar-thumb {
+                background-color: #cbd5e1;
+                border-radius: 3px;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- 登录页面 -->
+    <div id="login-page" class="min-h-screen flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg shadow-lg p-8 w-full max-w-md">
+            <div class="text-center mb-8">
+                <h1 class="text-2xl font-bold text-primary">客户信息管理系统</h1>
+                <p class="text-gray-500 mt-2">请登录以访问系统</p>
+            </div>
+            <form id="login-form" class="space-y-6">
+                <div>
+                    <label for="username" class="block text-sm font-medium text-gray-700 mb-1">用户名</label>
+                    <input type="text" id="username" name="username" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                </div>
+                <div>
+                    <label for="password" class="block text-sm font-medium text-gray-700 mb-1">密码</label>
+                    <input type="password" id="password" name="password" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                </div>
+                <div class="flex items-center">
+                    <input type="checkbox" id="remember-me" name="remember-me" class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">
+                    <label for="remember-me" class="ml-2 block text-sm text-gray-700">记住我</label>
+                </div>
+                <div>
+                    <button type="submit" class="w-full py-2 bg-primary text-white rounded-lg hover:bg-blue-700 transition-all-300">登录</button>
+                </div>
+            </form>
+            <div id="login-error" class="mt-4 p-3 bg-red-100 text-red-700 rounded-lg hidden">
+                用户名或密码错误，请重试。
+            </div>
+        </div>
+    </div>
+
+    <!-- 主应用 -->
+    <div id="app" class="flex h-screen overflow-hidden hidden">
+        <!-- 侧边导航栏 -->
+        <aside class="hidden md:flex md:flex-col w-64 bg-white border-r border-gray-200 shadow-sm">
+            <div class="flex items-center justify-center h-16 border-b border-gray-200">
+                <h1 class="text-xl font-bold text-primary">客户信息管理系统</h1>
+            </div>
+            <nav class="flex-1 overflow-y-auto p-4 space-y-2">
+                <button id="nav-dashboard" class="nav-btn flex items-center w-full px-4 py-3 text-left text-gray-700 rounded-lg bg-blue-50 hover:bg-blue-100 transition-all-300">
+                    <i class="fa fa-dashboard mr-3 text-primary"></i>
+                    <span>数据概览</span>
+                </button>
+                <button id="nav-add-customer" class="nav-btn flex items-center w-full px-4 py-3 text-left text-gray-600 rounded-lg hover:bg-blue-50 transition-all-300">
+                    <i class="fa fa-plus-circle mr-3 text-gray-500"></i>
+                    <span>添加客户</span>
+                </button>
+                <button id="nav-customer-list" class="nav-btn flex items-center w-full px-4 py-3 text-left text-gray-600 rounded-lg hover:bg-blue-50 transition-all-300">
+                    <i class="fa fa-list mr-3 text-gray-500"></i>
+                    <span>客户列表</span>
+                </button>
+                <button id="nav-export" class="nav-btn flex items-center w-full px-4 py-3 text-left text-gray-600 rounded-lg hover:bg-blue-50 transition-all-300">
+                    <i class="fa fa-download mr-3 text-gray-500"></i>
+                    <span>导出数据</span>
+                </button>
+                <button id="nav-add-user" class="nav-btn flex items-center w-full px-4 py-3 text-left text-gray-600 rounded-lg hover:bg-blue-50 transition-all-300">
+                    <i class="fa fa-user-plus mr-3 text-gray-500"></i>
+                    <span>新增用户</span>
+                </button>
+                <button id="nav-user-management" class="nav-btn flex items-center w-full px-4 py-3 text-left text-gray-600 rounded-lg hover:bg-blue-50 transition-all-300">
+                    <i class="fa fa-users mr-3 text-gray-500"></i>
+                    <span>用户管理</span>
+                </button>
+            </nav>
+            <div class="p-4 border-t border-gray-200">
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white">
+                        <i class="fa fa-user"></i>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm font-medium text-gray-700">管理员</p>
+                        <p class="text-xs text-gray-500">admin@example.com</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- 移动端导航菜单按钮 -->
+        <div class="md:hidden fixed bottom-4 right-4 z-50">
+            <button id="mobile-menu-btn" class="w-12 h-12 bg-primary rounded-full flex items-center justify-center text-white shadow-lg">
+                <i class="fa fa-bars"></i>
+            </button>
+        </div>
+
+        <!-- 移动端导航菜单 -->
+        <div id="mobile-menu" class="fixed inset-0 bg-gray-900 bg-opacity-50 z-40 hidden">
+            <div class="absolute right-0 top-0 h-full w-64 bg-white shadow-lg transform transition-transform duration-300 translate-x-full">
+                <div class="flex items-center justify-between p-4 border-b border-gray-200">
+                    <h2 class="text-lg font-semibold text-gray-800">菜单</h2>
+                    <button id="close-mobile-menu" class="text-gray-500 hover:text-gray-700">
+                        <i class="fa fa-times"></i>
+                    </button>
+                </div>
+                <nav class="p-4 space-y-2">
+                    <button class="mobile-nav-btn flex items-center w-full px-4 py-3 text-left text-gray-700 rounded-lg bg-blue-50" data-target="dashboard">
+                        <i class="fa fa-dashboard mr-3 text-primary"></i>
+                        <span>数据概览</span>
+                    </button>
+                    <button class="mobile-nav-btn flex items-center w-full px-4 py-3 text-left text-gray-600 rounded-lg" data-target="add-customer">
+                        <i class="fa fa-plus-circle mr-3 text-gray-500"></i>
+                        <span>添加客户</span>
+                    </button>
+                    <button class="mobile-nav-btn flex items-center w-full px-4 py-3 text-left text-gray-600 rounded-lg" data-target="customer-list">
+                        <i class="fa fa-list mr-3 text-gray-500"></i>
+                        <span>客户列表</span>
+                    </button>
+                    <button class="mobile-nav-btn flex items-center w-full px-4 py-3 text-left text-gray-600 rounded-lg" data-target="export">
+                        <i class="fa fa-download mr-3 text-gray-500"></i>
+                        <span>导出数据</span>
+                    </button>
+                    <button class="mobile-nav-btn flex items-center w-full px-4 py-3 text-left text-gray-600 rounded-lg" data-target="change-password">
+                        <i class="fa fa-key mr-3 text-gray-500"></i>
+                        <span>修改密码</span>
+                    </button>
+                    <button class="mobile-nav-btn flex items-center w-full px-4 py-3 text-left text-gray-600 rounded-lg" data-target="add-user">
+                        <i class="fa fa-user-plus mr-3 text-gray-500"></i>
+                        <span>新增用户</span>
+                    </button>
+                    <button class="mobile-nav-btn flex items-center w-full px-4 py-3 text-left text-gray-600 rounded-lg" data-target="user-management">
+                        <i class="fa fa-users mr-3 text-gray-500"></i>
+                        <span>用户管理</span>
+                    </button>
+                </nav>
+            </div>
+        </div>
+
+        <!-- 主内容区 -->
+        <main class="flex-1 overflow-y-auto bg-gray-50 p-4 md:p-6">
+            <!-- 顶部搜索栏 -->
+            <div class="bg-white rounded-lg shadow-sm p-4 mb-6">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                    <h2 id="page-title" class="text-xl font-semibold text-gray-800 mb-4 md:mb-0">数据概览</h2>
+                    <div class="flex flex-col md:flex-row space-y-3 md:space-y-0 md:space-x-3">
+                        <div class="relative">
+                            <input id="search-input" type="text" placeholder="搜索客户姓名或联系方式..." class="w-full md:w-64 pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                            <i class="fa fa-search absolute left-3 top-3 text-gray-400"></i>
+                        </div>
+                        <select id="filter-grade" class="w-full md:w-40 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                            <option value="">所有年级</option>
+                            <option value="中班">中班</option>
+                            <option value="大班">大班</option>
+                            <option value="一年级">一年级</option>
+                            <option value="二年级">二年级</option>
+                            <option value="三年级">三年级</option>
+                            <option value="四年级">四年级</option>
+                            <option value="五年级">五年级</option>
+                            <option value="六年级">六年级</option>
+                            <option value="其他">其他</option>
+                        </select>
+                        <select id="filter-status" class="w-full md:w-40 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                            <option value="">所有状态</option>
+                            <option value="待跟进">待跟进</option>
+                            <option value="跟进中">跟进中</option>
+                            <option value="已报名">已报名</option>
+                            <option value="已失效">已失效</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 页面内容区域 -->
+            <div id="page-content">
+                <!-- 数据概览页面 -->
+                <div id="dashboard-page" class="page-content">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                        <div class="bg-white rounded-lg shadow-sm p-6 transform hover:scale-105 transition-all-300">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm font-medium text-gray-500">总客户数</p>
+                                    <p id="total-customers" class="text-2xl font-bold text-gray-800">0</p>
+                                </div>
+                                <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                                    <i class="fa fa-users text-primary text-xl"></i>
+                                </div>
+                            </div>
+                            <div class="mt-4 flex items-center">
+                                <span id="new-customers" class="text-sm font-medium text-success">+0 今日新增</span>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-lg shadow-sm p-6 transform hover:scale-105 transition-all-300">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm font-medium text-gray-500">待跟进客户</p>
+                                    <p id="pending-customers" class="text-2xl font-bold text-gray-800">0</p>
+                                </div>
+                                <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
+                                    <i class="fa fa-clock-o text-warning text-xl"></i>
+                                </div>
+                            </div>
+                            <div class="mt-4 flex items-center">
+                                <span id="urgent-customers" class="text-sm font-medium text-danger">0 急需跟进</span>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-lg shadow-sm p-6 transform hover:scale-105 transition-all-300">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm font-medium text-gray-500">跟进中客户</p>
+                                    <p id="following-customers" class="text-2xl font-bold text-gray-800">0</p>
+                                </div>
+                                <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                                    <i class="fa fa-comments text-success text-xl"></i>
+                                </div>
+                            </div>
+                            <div class="mt-4 flex items-center">
+                                <span class="text-sm font-medium text-gray-500">正在积极沟通中</span>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-lg shadow-sm p-6 transform hover:scale-105 transition-all-300">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm font-medium text-gray-500">报名转化率</p>
+                                    <p id="conversion-rate" class="text-2xl font-bold text-gray-800">0%</p>
+                                </div>
+                                <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                                    <i class="fa fa-line-chart text-purple-600 text-xl"></i>
+                                </div>
+                            </div>
+                            <div class="mt-4 flex items-center">
+                                <span id="conversion-trend" class="text-sm font-medium text-success">↗ 较上周提升0%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="bg-white rounded-lg shadow-sm p-6">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4">客户年级分布</h3>
+                            <div class="h-64">
+                                <canvas id="grade-chart"></canvas>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-lg shadow-sm p-6">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4">客户采集方式分布</h3>
+                            <div class="h-64">
+                                <canvas id="source-chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 添加客户页面 -->
+                <div id="add-customer-page" class="page-content hidden">
+                    <div class="bg-white rounded-lg shadow-sm p-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-6">添加新客户</h3>
+                        <form id="add-customer-form" class="space-y-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label for="customer-name" class="block text-sm font-medium text-gray-700 mb-1">姓名 <span class="text-danger">*</span></label>
+                                    <input type="text" id="customer-name" name="name" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                                </div>
+                                <div>
+                                    <label for="customer-grade" class="block text-sm font-medium text-gray-700 mb-1">年级 <span class="text-danger">*</span></label>
+                                    <select id="customer-grade" name="grade" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                                        <option value="">请选择年级</option>
+                                        <option value="中班">中班</option>
+                                        <option value="大班">大班</option>
+                                        <option value="一年级">一年级</option>
+                                        <option value="二年级">二年级</option>
+                                        <option value="三年级">三年级</option>
+                                        <option value="四年级">四年级</option>
+                                        <option value="五年级">五年级</option>
+                                        <option value="六年级">六年级</option>
+                                        <option value="其他">其他</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="customer-phone" class="block text-sm font-medium text-gray-700 mb-1">联系方式 <span class="text-danger">*</span></label>
+                                    <input type="tel" id="customer-phone" name="phone" required pattern="[0-9]{11}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                                    <p class="mt-1 text-xs text-gray-500">请输入11位手机号码</p>
+                                </div>
+                                <div>
+                                    <label for="customer-source" class="block text-sm font-medium text-gray-700 mb-1">采集方式 <span class="text-danger">*</span></label>
+                                    <select id="customer-source" name="source" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                                        <option value="">请选择采集方式</option>
+                                        <option value="地推">地推</option>
+                                        <option value="转介绍">转介绍</option>
+                                        <option value="线上广告">线上广告</option>
+                                        <option value="自然到店">自然到店</option>
+                                        <option value="电话咨询">电话咨询</option>
+                                        <option value="其他">其他</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">首次沟通记录</label>
+                                <div class="space-y-4">
+                                    <div>
+                                        <label for="communication-method" class="block text-sm text-gray-600 mb-1">沟通方式</label>
+                                        <select id="communication-method" name="method" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                                            <option value="电话">电话</option>
+                                            <option value="微信">微信</option>
+                                            <option value="面谈">面谈</option>
+                                            <option value="短信">短信</option>
+                                            <option value="其他">其他</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label for="communication-content" class="block text-sm text-gray-600 mb-1">沟通内容</label>
+                                        <textarea id="communication-content" name="content" rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"></textarea>
+                                    </div>
+                                    <div>
+                                        <label for="communication-status" class="block text-sm text-gray-600 mb-1">跟进状态</label>
+                                        <select id="communication-status" name="status" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                                            <option value="待跟进">待跟进</option>
+                                            <option value="跟进中">跟进中</option>
+                                            <option value="已报名">已报名</option>
+                                            <option value="已失效">已失效</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="flex justify-end space-x-3">
+                                <button type="button" id="cancel-add" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-all-300">取消</button>
+                                <button type="submit" class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-blue-700 transition-all-300">保存客户</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- 客户列表页面 -->
+                <div id="customer-list-page" class="page-content hidden">
+                    <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">序号</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">姓名</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">年级</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">联系方式</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">采集方式</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">最近沟通</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">状态</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="customer-table-body" class="bg-white divide-y divide-gray-200">
+                                    <!-- 客户数据将通过JavaScript动态填充 -->
+                                    <tr class="animate-pulse">
+                                        <td colspan="8" class="px-6 py-4 text-center text-gray-500">暂无客户数据</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div id="pagination" class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+                            <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                                <div>
+                                    <p class="text-sm text-gray-700">
+                                        显示 <span id="showing-entries-start">1</span> 到 <span id="showing-entries-end">10</span> 条，共 <span id="total-entries">0</span> 条记录
+                                    </p>
+                                </div>
+                                <div>
+                                    <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                                        <button id="prev-page" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                            <span class="sr-only">上一页</span>
+                                            <i class="fa fa-chevron-left"></i>
+                                        </button>
+                                        <button id="page-1" class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-primary text-sm font-medium text-white">1</button>
+                                        <button id="next-page" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                            <span class="sr-only">下一页</span>
+                                            <i class="fa fa-chevron-right"></i>
+                                        </button>
+                                    </nav>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 导出数据页面 -->
+                <div id="export-page" class="page-content hidden">
+                    <div class="bg-white rounded-lg shadow-sm p-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-6">导出客户数据</h3>
+                        <div class="space-y-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">选择导出范围</label>
+                                <div class="space-y-3">
+                                    <div class="flex items-center">
+                                        <input type="radio" id="export-all" name="export-range" value="all" checked class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">
+                                        <label for="export-all" class="ml-2 block text-sm text-gray-700">导出所有客户数据</label>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <input type="radio" id="export-filtered" name="export-range" value="filtered" class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">
+                                        <label for="export-filtered" class="ml-2 block text-sm text-gray-700">仅导出当前筛选结果</label>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <input type="radio" id="export-date-range" name="export-range" value="date-range" class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">
+                                        <label for="export-date-range" class="ml-2 block text-sm text-gray-700">按日期范围导出</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div id="date-range-container" class="space-y-4 hidden">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label for="start-date" class="block text-sm font-medium text-gray-700 mb-1">开始日期</label>
+                                        <input type="date" id="start-date" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                                    </div>
+                                    <div>
+                                        <label for="end-date" class="block text-sm font-medium text-gray-700 mb-1">结束日期</label>
+                                        <input type="date" id="end-date" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">选择导出格式</label>
+                                <div class="space-y-3">
+                                    <div class="flex items-center">
+                                        <input type="radio" id="format-excel" name="export-format" value="excel" checked class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">
+                                        <label for="format-excel" class="ml-2 block text-sm text-gray-700">Excel (.xlsx)</label>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <input type="radio" id="format-csv" name="export-format" value="csv" class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">
+                                        <label for="format-csv" class="ml-2 block text-sm text-gray-700">CSV (.csv)</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">选择导出字段</label>
+                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                    <div class="flex items-center">
+                                        <input type="checkbox" id="field-id" name="export-fields" value="id" checked class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">
+                                        <label for="field-id" class="ml-2 block text-sm text-gray-700">序号</label>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <input type="checkbox" id="field-date" name="export-fields" value="date" checked class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">
+                                        <label for="field-date" class="ml-2 block text-sm text-gray-700">日期</label>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <input type="checkbox" id="field-name" name="export-fields" value="name" checked class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">
+                                        <label for="field-name" class="ml-2 block text-sm text-gray-700">姓名</label>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <input type="checkbox" id="field-grade" name="export-fields" value="grade" checked class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">
+                                        <label for="field-grade" class="ml-2 block text-sm text-gray-700">年级</label>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <input type="checkbox" id="field-source" name="export-fields" value="source" checked class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">
+                                        <label for="field-source" class="ml-2 block text-sm text-gray-700">采集方式</label>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <input type="checkbox" id="field-phone" name="export-fields" value="phone" checked class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">
+                                        <label for="field-phone" class="ml-2 block text-sm text-gray-700">联系方式</label>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <input type="checkbox" id="field-status" name="export-fields" value="status" checked class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">
+                                        <label for="field-status" class="ml-2 block text-sm text-gray-700">当前状态</label>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <input type="checkbox" id="field-last-communication" name="export-fields" value="lastCommunication" checked class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">
+                                        <label for="field-last-communication" class="ml-2 block text-sm text-gray-700">最近沟通</label>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <input type="checkbox" id="field-notes" name="export-fields" value="notes" class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">
+                                        <label for="field-notes" class="ml-2 block text-sm text-gray-700">沟通记录</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="flex justify-end space-x-3">
+                                <button id="cancel-export" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-all-300">取消</button>
+                                <button id="confirm-export" class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-blue-700 transition-all-300">导出数据</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 修改密码页面 -->
+                <div id="change-password-page" class="page-content hidden">
+                    <div class="bg-white rounded-lg shadow-sm p-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-6">修改密码</h3>
+                        <form id="change-password-form" class="space-y-6">
+                            <div>
+                                <label for="current-password" class="block text-sm font-medium text-gray-700 mb-1">当前密码 <span class="text-danger">*</span></label>
+                                <input type="password" id="current-password" name="current-password" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                            </div>
+                            <div>
+                                <label for="new-password" class="block text-sm font-medium text-gray-700 mb-1">新密码 <span class="text-danger">*</span></label>
+                                <input type="password" id="new-password" name="new-password" required minlength="6" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                                <p class="mt-1 text-xs text-gray-500">密码长度至少为6个字符</p>
+                            </div>
+                            <div>
+                                <label for="confirm-password" class="block text-sm font-medium text-gray-700 mb-1">确认新密码 <span class="text-danger">*</span></label>
+                                <input type="password" id="confirm-password" name="confirm-password" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                            </div>
+                            <div id="password-error" class="p-3 bg-red-100 text-red-700 rounded-lg hidden"></div>
+                            <div class="flex justify-end space-x-3">
+                                <button type="button" id="cancel-change-password" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-all-300">取消</button>
+                                <button type="submit" class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-blue-700 transition-all-300">确认修改</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- 新增用户页面 -->
+                <div id="add-user-page" class="page-content hidden">
+                    <div class="bg-white rounded-lg shadow-sm p-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-6">新增用户</h3>
+                        <form id="add-user-form" class="space-y-6">
+                            <div>
+                                <label for="add-username" class="block text-sm font-medium text-gray-700 mb-1">用户名 <span class="text-danger">*</span></label>
+                                <input type="text" id="add-username" name="username" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                            </div>
+                            <div>
+                                <label for="add-password" class="block text-sm font-medium text-gray-700 mb-1">密码 <span class="text-danger">*</span></label>
+                                <input type="password" id="add-password" name="password" required minlength="6" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                                <p class="mt-1 text-xs text-gray-500">密码长度至少为6个字符</p>
+                            </div>
+                            <div>
+                                <label for="add-name" class="block text-sm font-medium text-gray-700 mb-1">姓名 <span class="text-danger">*</span></label>
+                                <input type="text" id="add-name" name="name" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                            </div>
+                            <div>
+                                <label for="add-role" class="block text-sm font-medium text-gray-700 mb-1">用户角色 <span class="text-danger">*</span></label>
+                                <select id="add-role" name="role" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                                    <option value="user">普通用户</option>
+                                    <option value="consultant">课程顾问</option>
+                                </select>
+                            </div>
+                            <div id="add-user-error" class="p-3 bg-red-100 text-red-700 rounded-lg hidden"></div>
+                            <div class="flex justify-end space-x-3">
+                                <button type="button" id="cancel-add-user" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-all-300">取消</button>
+                                <button type="submit" class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-blue-700 transition-all-300">保存</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- 用户管理页面 -->
+                <div id="user-management-page" class="page-content hidden">
+                    <div class="bg-white rounded-lg shadow-sm p-6">
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="text-lg font-semibold text-gray-800">用户管理</h3>
+                            <button id="add-user-btn" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-700 transition-all-300 flex items-center">
+                                <i class="fa fa-plus mr-2"></i> 添加用户
+                            </button>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">用户名</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">姓名</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">角色</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="user-table-body" class="bg-white divide-y divide-gray-200">
+                                    <!-- 用户数据将通过JavaScript动态填充 -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 客户详情模态框 -->
+    <div id="customer-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between p-6 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-800">客户详情</h3>
+                <button id="close-modal" class="text-gray-500 hover:text-gray-700">
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div>
+                        <p class="text-sm text-gray-500">姓名</p>
+                        <p id="modal-name" class="text-lg font-medium text-gray-800">张三</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500">年级</p>
+                        <p id="modal-grade" class="text-lg font-medium text-gray-800">初一</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500">联系方式</p>
+                        <p id="modal-phone" class="text-lg font-medium text-gray-800">13800138000</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500">采集方式</p>
+                        <p id="modal-source" class="text-lg font-medium text-gray-800">地推</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500">录入日期</p>
+                        <p id="modal-date" class="text-lg font-medium text-gray-800">2023-06-01</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500">当前状态</p>
+                        <p id="modal-status" class="text-lg font-medium">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                待跟进
+                            </span>
+                        </p>
+                    </div>
+                </div>
+
+                <div class="mb-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h4 class="text-md font-semibold text-gray-800">沟通记录</h4>
+                        <button id="add-communication" class="flex items-center text-sm text-primary hover:text-blue-700">
+                            <i class="fa fa-plus-circle mr-1"></i> 添加沟通记录
+                        </button>
+                    </div>
+                    <div id="communication-list" class="space-y-4">
+                        <!-- 沟通记录将通过JavaScript动态填充 -->
+                    </div>
+                </div>
+
+                <!-- 添加沟通记录表单 -->
+                <div id="add-communication-form" class="bg-gray-50 rounded-lg p-4 mb-6 hidden">
+                    <h4 class="text-md font-semibold text-gray-800 mb-4">添加沟通记录</h4>
+                    <form class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="new-communication-date" class="block text-sm font-medium text-gray-700 mb-1">沟通日期</label>
+                                <input type="date" id="new-communication-date" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                            </div>
+                            <div>
+                                <label for="new-communication-method" class="block text-sm font-medium text-gray-700 mb-1">沟通方式</label>
+                                <select id="new-communication-method" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                                    <option value="电话">电话</option>
+                                    <option value="微信">微信</option>
+                                    <option value="面谈">面谈</option>
+                                    <option value="短信">短信</option>
+                                    <option value="其他">其他</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label for="new-communication-content" class="block text-sm font-medium text-gray-700 mb-1">沟通内容</label>
+                            <textarea id="new-communication-content" rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"></textarea>
+                        </div>
+                        <div>
+                            <label for="new-communication-status" class="block text-sm font-medium text-gray-700 mb-1">更新状态</label>
+                            <select id="new-communication-status" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                                <option value="待跟进">待跟进</option>
+                                <option value="跟进中">跟进中</option>
+                                <option value="已报名">已报名</option>
+                                <option value="已失效">已失效</option>
+                            </select>
+                        </div>
+                        <div class="flex justify-end space-x-3">
+                            <button type="button" id="cancel-communication" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-all-300">取消</button>
+                            <button type="submit" id="save-communication" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-700 transition-all-300">保存记录</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 成功提示模态框 -->
+    <div id="success-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden">
+        <div class="bg-white rounded-lg shadow-xl p-6 max-w-sm w-full">
+            <div class="flex flex-col items-center">
+                <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
+                    <i class="fa fa-check text-success text-2xl"></i>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-800 mb-2">操作成功</h3>
+                <p id="success-message" class="text-gray-600 text-center mb-6">客户信息已成功保存</p>
+                <button id="close-success-modal" class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-blue-700 transition-all-300">确定</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    <!-- SheetJS for Excel export -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    
+    <script>
+        // 客户数据存储
+        let customers = JSON.parse(localStorage.getItem('customers')) || [];
+        let filteredCustomers = [...customers];
+        let currentPage = 1;
+        const itemsPerPage = 10;
+        let currentCustomerId = null;
+        let gradeChart = null;
+        let sourceChart = null;
+
+        // 初始化应用
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始化日期为今天
+            document.getElementById('new-communication-date').valueAsDate = new Date();
+            
+            // 初始化事件监听
+            initEventListeners();
+            
+            // 初始化图表
+            initCharts();
+            
+            // 更新数据概览
+            updateDashboard();
+            
+            // 更新客户列表
+            updateCustomerTable();
+            
+            // 如果没有客户数据，添加一些示例数据
+            if (customers.length === 0) {
+                addSampleData();
+            }
+        });
+
+        // 初始化事件监听
+        function initEventListeners() {
+            // 导航按钮点击事件
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const target = this.id.replace('nav-', '');
+                    switchPage(target);
+                });
+            });
+
+            // 移动端导航按钮点击事件
+            document.querySelectorAll('.mobile-nav-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const target = this.getAttribute('data-target');
+                    switchPage(target);
+                    document.getElementById('mobile-menu').classList.add('hidden');
+                    document.querySelector('#mobile-menu > div').classList.add('translate-x-full');
+                });
+            });
+
+            // 移动端菜单开关
+            document.getElementById('mobile-menu-btn').addEventListener('click', function() {
+                document.getElementById('mobile-menu').classList.remove('hidden');
+                setTimeout(() => {
+                    document.querySelector('#mobile-menu > div').classList.remove('translate-x-full');
+                }, 10);
+            });
+
+            document.getElementById('close-mobile-menu').addEventListener('click', function() {
+                document.querySelector('#mobile-menu > div').classList.add('translate-x-full');
+                setTimeout(() => {
+                    document.getElementById('mobile-menu').classList.add('hidden');
+                }, 300);
+            });
+
+            // 添加客户表单提交
+            document.getElementById('add-customer-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                addCustomer();
+            });
+
+            // 取消添加客户
+            document.getElementById('cancel-add').addEventListener('click', function() {
+                switchPage('customer-list');
+            });
+
+            // 取消导出
+            document.getElementById('cancel-export').addEventListener('click', function() {
+                switchPage('dashboard');
+            });
+
+            // 确认导出
+            document.getElementById('confirm-export').addEventListener('click', function() {
+                exportData();
+            });
+
+            // 搜索和筛选事件
+            document.getElementById('search-input').addEventListener('input', filterCustomers);
+            document.getElementById('filter-grade').addEventListener('change', filterCustomers);
+            document.getElementById('filter-status').addEventListener('change', filterCustomers);
+
+            // 分页事件
+            document.getElementById('prev-page').addEventListener('click', goToPrevPage);
+            document.getElementById('next-page').addEventListener('click', goToNextPage);
+
+            // 模态框事件
+            document.getElementById('close-modal').addEventListener('click', closeCustomerModal);
+            document.getElementById('add-communication').addEventListener('click', showAddCommunicationForm);
+            document.getElementById('cancel-communication').addEventListener('click', hideAddCommunicationForm);
+            document.getElementById('save-communication').addEventListener('click', function(e) {
+                e.preventDefault();
+                addCommunication();
+            });
+
+            // 成功提示模态框事件
+            document.getElementById('close-success-modal').addEventListener('click', function() {
+                document.getElementById('success-modal').classList.add('hidden');
+            });
+
+            // 导出日期范围选择事件
+            document.querySelectorAll('input[name="export-range"]').forEach(radio => {
+                radio.addEventListener('change', function() {
+                    if (this.value === 'date-range') {
+                        document.getElementById('date-range-container').classList.remove('hidden');
+                    } else {
+                        document.getElementById('date-range-container').classList.add('hidden');
+                    }
+                });
+            });
+        }
+
+        // 切换页面
+        function switchPage(page) {
+            // 更新导航按钮样式
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('bg-blue-50', 'text-gray-700');
+                btn.classList.add('text-gray-600');
+                const icon = btn.querySelector('i');
+                icon.classList.remove('text-primary');
+                icon.classList.add('text-gray-500');
+            });
+
+            const activeNavBtn = document.getElementById(`nav-${page}`);
+            if (activeNavBtn) {
+                activeNavBtn.classList.add('bg-blue-50', 'text-gray-700');
+                activeNavBtn.classList.remove('text-gray-600');
+                const icon = activeNavBtn.querySelector('i');
+                icon.classList.add('text-primary');
+                icon.classList.remove('text-gray-500');
+            }
+
+            // 更新移动端导航按钮样式
+            document.querySelectorAll('.mobile-nav-btn').forEach(btn => {
+                btn.classList.remove('bg-blue-50', 'text-gray-700');
+                btn.classList.add('text-gray-600');
+                const icon = btn.querySelector('i');
+                icon.classList.remove('text-primary');
+                icon.classList.add('text-gray-500');
+            });
+
+            document.querySelectorAll('.mobile-nav-btn').forEach(btn => {
+                if (btn.getAttribute('data-target') === page) {
+                    btn.classList.add('bg-blue-50', 'text-gray-700');
+                    btn.classList.remove('text-gray-600');
+                    const icon = btn.querySelector('i');
+                    icon.classList.add('text-primary');
+                    icon.classList.remove('text-gray-500');
+                }
+            });
+
+            // 更新页面标题
+            const pageTitles = {
+                'dashboard': '数据概览',
+                'add-customer': '添加客户',
+                'customer-list': '客户列表',
+                'export': '导出数据',
+                'add-user': '新增用户',
+                'user-management': '用户管理'
+            };
+            document.getElementById('page-title').textContent = pageTitles[page];
+
+            // 显示对应页面内容
+            document.querySelectorAll('.page-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+            document.getElementById(`${page}-page`).classList.remove('hidden');
+
+            // 如果切换到数据概览页面，更新图表
+            if (page === 'dashboard') {
+                updateCharts();
+            }
+
+            // 如果切换到客户列表页面，更新客户表格
+            if (page === 'customer-list') {
+                currentPage = 1;
+                updateCustomerTable();
+            }
+        }
+
+        // 添加示例数据
+        function addSampleData() {
+            const today = new Date();
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+            
+            const sampleCustomers = [
+                {
+                    id: generateId(),
+                    date: formatDate(today),
+                    name: '张三',
+                    grade: '初一',
+                    source: '地推',
+                    phone: '13800138001',
+                    status: '待跟进',
+                    communications: [
+                        {
+                            date: formatDate(today),
+                            method: '电话',
+                            content: '家长咨询初一数学课程，对价格有疑问，需要进一步沟通。',
+                            status: '待跟进'
+                        }
+                    ]
+                },
+                {
+                    id: generateId(),
+                    date: formatDate(yesterday),
+                    name: '李四',
+                    grade: '初三',
+                    source: '转介绍',
+                    phone: '13800138002',
+                    status: '跟进中',
+                    communications: [
+                        {
+                            date: formatDate(yesterday),
+                            method: '微信',
+                            content: '通过朋友介绍了解到我们的课程，对中考冲刺班感兴趣，约定下周来校区参观。',
+                            status: '跟进中'
+                        }
+                    ]
+                },
+                {
+                    id: generateId(),
+                    date: formatDate(today),
+                    name: '王五',
+                    grade: '小学4-6年级',
+                    source: '线上广告',
+                    phone: '13800138003',
+                    status: '已报名',
+                    communications: [
+                        {
+                            date: formatDate(today),
+                            method: '面谈',
+                            content: '家长带孩子来校区咨询，对教学环境和师资很满意，当场报名了小学数学思维课程。',
+                            status: '已报名'
+                        }
+                    ]
+                },
+                {
+                    id: generateId(),
+                    date: formatDate(yesterday),
+                    name: '赵六',
+                    grade: '高二',
+                    source: '自然到店',
+                    phone: '13800138004',
+                    status: '已失效',
+                    communications: [
+                        {
+                            date: formatDate(yesterday),
+                            method: '面谈',
+                            content: '学生自己来咨询高中物理课程，价格超出预算，暂不考虑。',
+                            status: '已失效'
+                        }
+                    ]
+                },
+                {
+                    id: generateId(),
+                    date: formatDate(today),
+                    name: '钱七',
+                    grade: '高三',
+                    source: '电话咨询',
+                    phone: '13800138005',
+                    status: '跟进中',
+                    communications: [
+                        {
+                            date: formatDate(today),
+                            method: '电话',
+                            content: '家长咨询高考冲刺班，了解了课程安排和师资情况，需要和孩子商量后决定。',
+                            status: '跟进中'
+                        }
+                    ]
+                }
+            ];
+
+            customers = sampleCustomers;
+            filteredCustomers = [...customers];
+            saveCustomers();
+            updateDashboard();
+            updateCustomerTable();
+            updateCharts();
+        }
+
+        // 生成唯一ID
+        function generateId() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+        }
+
+        // 格式化日期
+        function formatDate(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        // 添加客户
+        function addCustomer() {
+            const name = document.getElementById('customer-name').value;
+            const grade = document.getElementById('customer-grade').value;
+            const phone = document.getElementById('customer-phone').value;
+            const source = document.getElementById('customer-source').value;
+            const communicationMethod = document.getElementById('communication-method').value;
+            const communicationContent = document.getElementById('communication-content').value;
+            const communicationStatus = document.getElementById('communication-status').value;
+
+            const today = new Date();
+
+            const newCustomer = {
+                id: generateId(),
+                date: formatDate(today),
+                name,
+                grade,
+                source,
+                phone,
+                status: communicationStatus,
+                consultant: currentUser.username, // 添加归属顾问字段
+                communications: [
+                    {
+                        date: formatDate(today),
+                        method: communicationMethod,
+                        content: communicationContent,
+                        status: communicationStatus,
+                        user: currentUser.username // 添加沟通记录的操作人
+                    }
+                ]
+            };
+
+            customers.push(newCustomer);
+            saveCustomers();
+
+            // 重置表单
+            document.getElementById('add-customer-form').reset();
+
+            // 更新数据
+            updateDashboard();
+            filterCustomers();
+            updateCharts();
+
+            // 显示成功提示
+            showSuccessModal('客户信息已成功添加');
+
+            // 切换到客户列表页面
+            switchPage('customer-list');
+        }
+
+        // 过滤客户
+        function filterCustomers() {
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+            const gradeFilter = document.getElementById('filter-grade').value;
+            const statusFilter = document.getElementById('filter-status').value;
+
+            filteredCustomers = customers.filter(customer => {
+                // 课程顾问只能看到自己的客户
+                if (currentUser.role === 'consultant' && customer.consultant !== currentUser.username) {
+                    return false;
+                }
+
+                const matchesSearch = customer.name.toLowerCase().includes(searchTerm) || 
+                                     customer.phone.includes(searchTerm);
+                const matchesGrade = !gradeFilter || customer.grade === gradeFilter;
+                const matchesStatus = !statusFilter || customer.status === statusFilter;
+
+                return matchesSearch && matchesGrade && matchesStatus;
+            });
+
+            currentPage = 1;
+            updateCustomerTable();
+        }
+
+        // 更新客户表格
+        function updateCustomerTable() {
+            const tableBody = document.getElementById('customer-table-body');
+            tableBody.innerHTML = '';
+
+            if (filteredCustomers.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="8" class="px-6 py-4 text-center text-gray-500">暂无客户数据</td></tr>';
+                updatePagination();
+                return;
+            }
+
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = Math.min(startIndex + itemsPerPage, filteredCustomers.length);
+            const paginatedCustomers = filteredCustomers.slice(startIndex, endIndex);
+
+            paginatedCustomers.forEach((customer, index) => {
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-gray-50 transition-all-300 cursor-pointer';
+                row.onclick = () => openCustomerModal(customer.id);
+
+                // 获取最近沟通日期
+                let lastCommunicationDate = '-';
+                if (customer.communications && customer.communications.length > 0) {
+                    const sortedCommunications = [...customer.communications].sort((a, b) => 
+                        new Date(b.date) - new Date(a.date)
+                    );
+                    lastCommunicationDate = sortedCommunications[0].date;
+                }
+
+                // 设置状态标签样式
+                let statusBadge = '';
+                switch (customer.status) {
+                    case '待跟进':
+                        statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">待跟进</span>';
+                        break;
+                    case '跟进中':
+                        statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">跟进中</span>';
+                        break;
+                    case '已报名':
+                        statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">已报名</span>';
+                        break;
+                    case '已失效':
+                        statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">已失效</span>';
+                        break;
+                }
+
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${startIndex + index + 1}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0 h-10 w-10 bg-gray-100 rounded-full flex items-center justify-center">
+                                <span class="text-gray-500 font-medium">${customer.name.charAt(0)}</span>
+                            </div>
+                            <div class="ml-4">
+                                <div class="text-sm font-medium text-gray-900">${customer.name}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${customer.grade}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${customer.phone}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${customer.source}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${lastCommunicationDate}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        ${statusBadge}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <button class="text-primary hover:text-blue-700 mr-3 view-btn" onclick="event.stopPropagation(); openCustomerModal('${customer.id}')">查看</button>
+                        ${currentUser.role === 'admin' ? `<button class="text-danger hover:text-red-700 delete-btn" onclick="event.stopPropagation(); deleteCustomer('${customer.id}')">删除</button>` : ''}
+                    </td>
+                `;
+
+                tableBody.appendChild(row);
+            });
+
+            updatePagination();
+        }
+
+        // 更新分页
+        function updatePagination() {
+            const totalPages = Math.ceil(filteredCustomers.length / itemsPerPage);
+            const startIndex = (currentPage - 1) * itemsPerPage + 1;
+            const endIndex = Math.min(currentPage * itemsPerPage, filteredCustomers.length);
+
+            document.getElementById('showing-entries-start').textContent = startIndex;
+            document.getElementById('showing-entries-end').textContent = endIndex;
+            document.getElementById('total-entries').textContent = filteredCustomers.length;
+
+            const prevButton = document.getElementById('prev-page');
+            const nextButton = document.getElementById('next-page');
+
+            prevButton.disabled = currentPage === 1;
+            prevButton.classList.toggle('opacity-50', currentPage === 1);
+
+            nextButton.disabled = currentPage === totalPages || totalPages === 0;
+            nextButton.classList.toggle('opacity-50', currentPage === totalPages || totalPages === 0);
+
+            // 更新页码按钮
+            const pageButtonsContainer = document.querySelector('#pagination nav');
+            const existingPageButtons = pageButtonsContainer.querySelectorAll('[id^="page-"]');
+            existingPageButtons.forEach(btn => btn.remove());
+
+            // 插入页码按钮
+            const maxVisiblePages = 5;
+            let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+            let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+            
+            if (endPage - startPage + 1 < maxVisiblePages) {
+                startPage = Math.max(1, endPage - maxVisiblePages + 1);
+            }
+
+            for (let i = startPage; i <= endPage; i++) {
+                const pageButton = document.createElement('button');
+                pageButton.id = `page-${i}`;
+                pageButton.className = `relative inline-flex items-center px-4 py-2 border ${i === currentPage ? 'bg-primary text-white border-primary' : 'bg-white text-gray-500 border-gray-300 hover:bg-gray-50'}`;
+                pageButton.textContent = i;
+                pageButton.onclick = () => goToPage(i);
+                
+                // 插入到下一页按钮之前
+                pageButtonsContainer.insertBefore(pageButton, nextButton);
+            }
+        }
+
+        // 跳转到上一页
+        function goToPrevPage() {
+            if (currentPage > 1) {
+                currentPage--;
+                updateCustomerTable();
+            }
+        }
+
+        // 跳转到下一页
+        function goToNextPage() {
+            const totalPages = Math.ceil(filteredCustomers.length / itemsPerPage);
+            if (currentPage < totalPages) {
+                currentPage++;
+                updateCustomerTable();
+            }
+        }
+
+        // 跳转到指定页
+        function goToPage(page) {
+            currentPage = page;
+            updateCustomerTable();
+        }
+
+        // 打开客户详情模态框
+        function openCustomerModal(customerId) {
+            currentCustomerId = customerId;
+            const customer = customers.find(c => c.id === customerId);
+            
+            if (!customer) return;
+
+            // 填充客户信息
+            document.getElementById('modal-name').textContent = customer.name;
+            document.getElementById('modal-grade').textContent = customer.grade;
+            document.getElementById('modal-phone').textContent = customer.phone;
+            document.getElementById('modal-source').textContent = customer.source;
+            document.getElementById('modal-date').textContent = customer.date;
+
+            // 设置状态标签
+            let statusBadge = '';
+            switch (customer.status) {
+                case '待跟进':
+                    statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">待跟进</span>';
+                    break;
+                case '跟进中':
+                    statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">跟进中</span>';
+                    break;
+                case '已报名':
+                    statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">已报名</span>';
+                    break;
+                case '已失效':
+                    statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">已失效</span>';
+                    break;
+            }
+            document.getElementById('modal-status').innerHTML = statusBadge;
+
+            // 填充沟通记录
+            const communicationList = document.getElementById('communication-list');
+            communicationList.innerHTML = '';
+
+            if (customer.communications && customer.communications.length > 0) {
+                // 按日期降序排序
+                const sortedCommunications = [...customer.communications].sort((a, b) => 
+                    new Date(b.date) - new Date(a.date)
+                );
+
+                sortedCommunications.forEach(comm => {
+                    const commItem = document.createElement('div');
+                    commItem.className = 'bg-gray-50 rounded-lg p-4';
+                    
+                    let methodIcon = '';
+                    switch (comm.method) {
+                        case '电话':
+                            methodIcon = '<i class="fa fa-phone text-blue-500"></i>';
+                            break;
+                        case '微信':
+                            methodIcon = '<i class="fa fa-wechat text-green-500"></i>';
+                            break;
+                        case '面谈':
+                            methodIcon = '<i class="fa fa-users text-purple-500"></i>';
+                            break;
+                        case '短信':
+                            methodIcon = '<i class="fa fa-comment text-orange-500"></i>';
+                            break;
+                        default:
+                            methodIcon = '<i class="fa fa-envelope text-gray-500"></i>';
+                    }
+
+                    let statusBadge = '';
+                    switch (comm.status) {
+                        case '待跟进':
+                            statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">待跟进</span>';
+                            break;
+                        case '跟进中':
+                            statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">跟进中</span>';
+                            break;
+                        case '已报名':
+                            statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">已报名</span>';
+                            break;
+                        case '已失效':
+                            statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">已失效</span>';
+                            break;
+                    }
+
+                    commItem.innerHTML = `
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center">
+                                <span class="mr-2">${methodIcon}</span>
+                                <span class="text-sm font-medium text-gray-800">${comm.method}</span>
+                                <span class="mx-2 text-gray-300">|</span>
+                                <span class="text-sm text-gray-500">${comm.date}</span>
+                            </div>
+                            ${statusBadge}
+                        </div>
+                        <p class="text-sm text-gray-700">${comm.content}</p>
+                    `;
+
+                    communicationList.appendChild(commItem);
+                });
+            } else {
+                communicationList.innerHTML = '<p class="text-gray-500 text-center py-4">暂无沟通记录</p>';
+            }
+
+            // 隐藏添加沟通记录表单
+            hideAddCommunicationForm();
+
+            // 显示模态框
+            document.getElementById('customer-modal').classList.remove('hidden');
+        }
+
+        // 关闭客户详情模态框
+        function closeCustomerModal() {
+            document.getElementById('customer-modal').classList.add('hidden');
+            currentCustomerId = null;
+        }
+
+        // 显示添加沟通记录表单
+        function showAddCommunicationForm() {
+            document.getElementById('add-communication-form').classList.remove('hidden');
+            document.getElementById('new-communication-date').valueAsDate = new Date();
+        }
+
+        // 隐藏添加沟通记录表单
+        function hideAddCommunicationForm() {
+            document.getElementById('add-communication-form').classList.add('hidden');
+            document.getElementById('add-communication-form').querySelector('form').reset();
+        }
+
+        // 添加沟通记录
+        function addCommunication() {
+            if (!currentCustomerId) return;
+
+            const customerIndex = customers.findIndex(c => c.id === currentCustomerId);
+            if (customerIndex === -1) return;
+
+            const date = document.getElementById('new-communication-date').value;
+            const method = document.getElementById('new-communication-method').value;
+            const content = document.getElementById('new-communication-content').value;
+            const status = document.getElementById('new-communication-status').value;
+
+            if (!date || !content) {
+                alert('请填写完整的沟通记录信息');
+                return;
+            }
+
+            const newCommunication = {
+                date,
+                method,
+                content,
+                status,
+                user: currentUser.username // 添加沟通记录的操作人
+            };
+
+            // 添加沟通记录
+            if (!customers[customerIndex].communications) {
+                customers[customerIndex].communications = [];
+            }
+            customers[customerIndex].communications.push(newCommunication);
+
+            // 更新客户状态
+            customers[customerIndex].status = status;
+
+            saveCustomers();
+
+            // 隐藏表单
+            hideAddCommunicationForm();
+
+            // 重新打开客户详情模态框以更新数据
+            openCustomerModal(currentCustomerId);
+
+            // 更新其他数据
+            updateDashboard();
+            filterCustomers();
+            updateCharts();
+
+            // 显示成功提示
+            showSuccessModal('沟通记录已成功添加');
+        }
+
+        // 导出数据
+        function exportData() {
+            const exportRange = document.querySelector('input[name="export-range"]:checked').value;
+            const exportFormat = document.querySelector('input[name="export-format"]:checked').value;
+            const selectedFields = Array.from(document.querySelectorAll('input[name="export-fields"]:checked')).map(checkbox => checkbox.value);
+
+            let dataToExport = [];
+
+            // 根据选择的范围过滤数据
+            if (exportRange === 'all') {
+                dataToExport = [...customers];
+            } else if (exportRange === 'filtered') {
+                dataToExport = [...filteredCustomers];
+            } else if (exportRange === 'date-range') {
+                const startDate = document.getElementById('start-date').value;
+                const endDate = document.getElementById('end-date').value;
+
+                if (!startDate || !endDate) {
+                    alert('请选择日期范围');
+                    return;
+                }
+
+                dataToExport = customers.filter(customer => {
+                    const customerDate = new Date(customer.date);
+                    return customerDate >= new Date(startDate) && customerDate <= new Date(endDate);
+                });
+            }
+
+            // 准备导出数据
+            const exportData = dataToExport.map(customer => {
+                // 获取最近沟通日期
+                let lastCommunicationDate = '-';
+                let notes = '';
+                
+                if (customer.communications && customer.communications.length > 0) {
+                    const sortedCommunications = [...customer.communications].sort((a, b) => 
+                        new Date(b.date) - new Date(a.date)
+                    );
+                    lastCommunicationDate = sortedCommunications[0].date;
+                    
+                    // 合并所有沟通记录
+                    notes = sortedCommunications.map(comm => 
+                        `${comm.date} ${comm.method}: ${comm.content}`
+                    ).join('\n');
+                }
+
+                const row = {};
+                
+                if (selectedFields.includes('id')) row['序号'] = customer.id;
+                if (selectedFields.includes('date')) row['录入日期'] = customer.date;
+                if (selectedFields.includes('name')) row['姓名'] = customer.name;
+                if (selectedFields.includes('grade')) row['年级'] = customer.grade;
+                if (selectedFields.includes('source')) row['采集方式'] = customer.source;
+                if (selectedFields.includes('phone')) row['联系方式'] = customer.phone;
+                if (selectedFields.includes('status')) row['当前状态'] = customer.status;
+                if (selectedFields.includes('lastCommunication')) row['最近沟通日期'] = lastCommunicationDate;
+                if (selectedFields.includes('notes')) row['沟通记录'] = notes;
+
+                return row;
+            });
+
+            // 创建工作簿
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.json_to_sheet(exportData);
+
+            // 添加工作表到工作簿
+            XLSX.utils.book_append_sheet(wb, ws, '客户数据');
+
+            // 生成文件名
+            const today = new Date();
+            const fileName = `客户数据_${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, '0')}${String(today.getDate()).padStart(2, '0')}`;
+
+            // 导出文件
+            if (exportFormat === 'excel') {
+                XLSX.writeFile(wb, `${fileName}.xlsx`);
+            } else {
+                XLSX.writeFile(wb, `${fileName}.csv`);
+            }
+
+            // 显示成功提示
+            showSuccessModal('数据已成功导出');
+        }
+
+        // 初始化图表
+        function initCharts() {
+            // 年级分布图表
+            const gradeCtx = document.getElementById('grade-chart').getContext('2d');
+            gradeChart = new Chart(gradeCtx, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: '客户数量',
+                        data: [],
+                        backgroundColor: [
+                            'rgba(37, 99, 235, 0.7)',
+                            'rgba(59, 130, 246, 0.7)',
+                            'rgba(96, 165, 250, 0.7)',
+                            'rgba(147, 197, 253, 0.7)',
+                            'rgba(191, 219, 254, 0.7)',
+                            'rgba(219, 234, 254, 0.7)',
+                            'rgba(239, 246, 255, 0.7)',
+                            'rgba(219, 234, 254, 0.7)',
+                            'rgba(191, 219, 254, 0.7)'
+                        ],
+                        borderColor: [
+                            'rgba(37, 99, 235, 1)',
+                            'rgba(59, 130, 246, 1)',
+                            'rgba(96, 165, 250, 1)',
+                            'rgba(147, 197, 253, 1)',
+                            'rgba(191, 219, 254, 1)',
+                            'rgba(219, 234, 254, 1)',
+                            'rgba(239, 246, 255, 1)',
+                            'rgba(219, 234, 254, 1)',
+                            'rgba(191, 219, 254, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0
+                            }
+                        }
+                    }
+                }
+            });
+
+            // 采集方式分布图表
+            const sourceCtx = document.getElementById('source-chart').getContext('2d');
+            sourceChart = new Chart(sourceCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        data: [],
+                        backgroundColor: [
+                            'rgba(37, 99, 235, 0.7)',
+                            'rgba(16, 185, 129, 0.7)',
+                            'rgba(245, 158, 11, 0.7)',
+                            'rgba(239, 68, 68, 0.7)',
+                            'rgba(139, 92, 246, 0.7)',
+                            'rgba(107, 114, 128, 0.7)'
+                        ],
+                        borderColor: [
+                            'rgba(37, 99, 235, 1)',
+                            'rgba(16, 185, 129, 1)',
+                            'rgba(245, 158, 11, 1)',
+                            'rgba(239, 68, 68, 1)',
+                            'rgba(139, 92, 246, 1)',
+                            'rgba(107, 114, 128, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right'
+                        }
+                    }
+                }
+            });
+
+            // 更新图表数据
+            updateCharts();
+        }
+
+        // 更新图表
+        function updateCharts() {
+            if (!gradeChart || !sourceChart) return;
+
+            // 统计年级分布
+            const gradeStats = {};
+            customers.forEach(customer => {
+                gradeStats[customer.grade] = (gradeStats[customer.grade] || 0) + 1;
+            });
+
+            // 更新年级分布图表
+            gradeChart.data.labels = Object.keys(gradeStats);
+            gradeChart.data.datasets[0].data = Object.values(gradeStats);
+            gradeChart.update();
+
+            // 统计采集方式分布
+            const sourceStats = {};
+            customers.forEach(customer => {
+                sourceStats[customer.source] = (sourceStats[customer.source] || 0) + 1;
+            });
+
+            // 更新采集方式分布图表
+            sourceChart.data.labels = Object.keys(sourceStats);
+            sourceChart.data.datasets[0].data = Object.values(sourceStats);
+            sourceChart.update();
+        }
+
+        // 更新数据概览
+        function updateDashboard() {
+            // 总客户数
+            document.getElementById('total-customers').textContent = customers.length;
+
+            // 今日新增客户数
+            const today = formatDate(new Date());
+            const newCustomersToday = customers.filter(c => c.date === today).length;
+            document.getElementById('new-customers').textContent = `+${newCustomersToday} 今日新增`;
+
+            // 待跟进客户数
+            const pendingCustomers = customers.filter(c => c.status === '待跟进').length;
+            document.getElementById('pending-customers').textContent = pendingCustomers;
+
+            // 急需跟进客户数（3天以上未跟进）
+            const threeDaysAgo = new Date();
+            threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+            const urgentCustomers = customers.filter(c => {
+                if (c.status !== '待跟进') return false;
+                
+                // 检查是否有沟通记录
+                if (!c.communications || c.communications.length === 0) {
+                    // 如果没有沟通记录，检查录入日期
+                    return new Date(c.date) < threeDaysAgo;
+                }
+                
+                // 检查最近一次沟通日期
+                const sortedCommunications = [...c.communications].sort((a, b) => 
+                    new Date(b.date) - new Date(a.date)
+                );
+                return new Date(sortedCommunications[0].date) < threeDaysAgo;
+            }).length;
+            document.getElementById('urgent-customers').textContent = `${urgentCustomers} 急需跟进`;
+
+            // 跟进中客户数
+            const followingCustomers = customers.filter(c => c.status === '跟进中').length;
+            document.getElementById('following-customers').textContent = followingCustomers;
+
+            // 报名转化率
+            const registeredCustomers = customers.filter(c => c.status === '已报名').length;
+            const conversionRate = customers.length > 0 ? Math.round((registeredCustomers / customers.length) * 100) : 0;
+            document.getElementById('conversion-rate').textContent = `${conversionRate}%`;
+
+            // 计算上周转化率
+            const oneWeekAgo = new Date();
+            oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+            const customersLastWeek = customers.filter(c => new Date(c.date) < oneWeekAgo);
+            const registeredLastWeek = customersLastWeek.filter(c => c.status === '已报名').length;
+            const conversionRateLastWeek = customersLastWeek.length > 0 ? Math.round((registeredLastWeek / customersLastWeek.length) * 100) : 0;
+
+            // 计算转化率趋势
+            const conversionDiff = conversionRate - conversionRateLastWeek;
+            const conversionTrend = document.getElementById('conversion-trend');
+            if (conversionDiff > 0) {
+                conversionTrend.textContent = `↗ 较上周提升${conversionDiff}%`;
+                conversionTrend.className = 'text-sm font-medium text-success';
+            } else if (conversionDiff < 0) {
+                conversionTrend.textContent = `↘ 较上周下降${Math.abs(conversionDiff)}%`;
+                conversionTrend.className = 'text-sm font-medium text-danger';
+            } else {
+                conversionTrend.textContent = `→ 较上周持平`;
+                conversionTrend.className = 'text-sm font-medium text-gray-500';
+            }
+        }
+
+        // 显示成功提示模态框
+        function showSuccessModal(message) {
+            document.getElementById('success-message').textContent = message;
+            document.getElementById('success-modal').classList.remove('hidden');
+        }
+
+        // 删除客户
+        function deleteCustomer(customerId) {
+            if (confirm('确定要删除此客户信息吗？此操作不可恢复。')) {
+                const customerIndex = customers.findIndex(c => c.id === customerId);
+                if (customerIndex !== -1) {
+                    customers.splice(customerIndex, 1);
+                    saveCustomers();
+                    
+                    // 更新数据
+                    updateDashboard();
+                    filterCustomers();
+                    updateCharts();
+                    
+                    // 显示成功提示
+                    showSuccessModal('客户信息已成功删除');
+                }
+            }
+        }
+
+        // 保存客户数据到本地存储
+        function saveCustomers() {
+            localStorage.setItem('customers', JSON.stringify(customers));
+        }
+
+        // 用户认证相关代码
+        let currentUser = null;
+
+        // 预定义用户
+        let users = [
+            {
+                username: 'admin',
+                password: 'ff18020127556',
+                role: 'admin',
+                name: '系统管理员'
+            },
+            {
+                username: 'user1',
+                password: 'ss18020127556',
+                role: 'user',
+                name: '普通用户'
+            },
+            {
+                username: 'consultant',
+                password: 'consultant123',
+                role: 'consultant',
+                name: '课程顾问'
+            }
+        ];
+        
+        // 从本地存储加载用户数据
+        const savedUsers = localStorage.getItem('users');
+        if (savedUsers) {
+            users = JSON.parse(savedUsers);
+        }
+
+        // 初始化登录功能
+        document.addEventListener('DOMContentLoaded', function() {
+            // 检查是否已登录
+            checkLoginStatus();
+            
+            // 登录表单提交
+            document.getElementById('login-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                login();
+            });
+        });
+
+        // 检查登录状态
+        function checkLoginStatus() {
+            const savedUser = localStorage.getItem('currentUser');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                showApp();
+            } else {
+                showLogin();
+            }
+        }
+
+        // 登录
+        function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const rememberMe = document.getElementById('remember-me').checked;
+
+            const user = users.find(u => u.username === username && u.password === password);
+            
+            if (user) {
+                currentUser = user;
+                
+                if (rememberMe) {
+                    localStorage.setItem('currentUser', JSON.stringify(user));
+                } else {
+                    sessionStorage.setItem('currentUser', JSON.stringify(user));
+                }
+                
+                showApp();
+            } else {
+                document.getElementById('login-error').classList.remove('hidden');
+            }
+        }
+
+        // 显示登录页面
+        function showLogin() {
+            document.getElementById('login-page').classList.remove('hidden');
+            document.getElementById('app').classList.add('hidden');
+        }
+
+        // 显示应用
+        function showApp() {
+            document.getElementById('login-page').classList.add('hidden');
+            document.getElementById('app').classList.remove('hidden');
+            
+            // 更新用户信息显示
+            updateUserInfo();
+            
+            // 根据用户权限更新界面
+            updateUIByPermission();
+        }
+
+        // 更新用户信息显示
+        function updateUserInfo() {
+            const userInfoElement = document.querySelector('aside .p-4.border-t');
+            if (userInfoElement) {
+                userInfoElement.innerHTML = `
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white">
+                            <i class="fa fa-user"></i>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm font-medium text-gray-700">${currentUser.name}</p>
+                            <p class="text-xs text-gray-500">${currentUser.username} (${getRoleName(currentUser.role)})</p>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <button id="logout-btn" class="w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg flex items-center justify-center">
+                            <i class="fa fa-sign-out mr-2"></i> 退出登录
+                        </button>
+                    </div>
+                `;
+                
+                // 添加退出登录事件
+                document.getElementById('logout-btn').addEventListener('click', logout);
+            }
+        }
+
+        // 获取角色名称
+        function getRoleName(role) {
+            switch (role) {
+                case 'admin': return '管理员';
+                case 'user': return '普通用户';
+                case 'consultant': return '课程顾问';
+                default: return '未知角色';
+            }
+        }
+
+        // 根据用户权限更新界面
+        function updateUIByPermission() {
+            // 管理员拥有所有权限
+            if (currentUser.role === 'admin') {
+                // 显示用户管理功能
+                document.getElementById('nav-user-management').classList.remove('hidden');
+                
+                // 显示移动端用户管理按钮
+                document.querySelectorAll('.mobile-nav-btn').forEach(btn => {
+                    if (btn.getAttribute('data-target') === 'user-management') {
+                        btn.classList.remove('hidden');
+                    }
+                });
+                return;
+            }
+            
+            // 普通用户和课程顾问的权限限制
+            if (currentUser.role === 'user' || currentUser.role === 'consultant') {
+                // 隐藏导出数据功能
+                document.getElementById('nav-export').classList.add('hidden');
+                
+                // 隐藏移动端导出按钮
+                document.querySelectorAll('.mobile-nav-btn').forEach(btn => {
+                    if (btn.getAttribute('data-target') === 'export') {
+                        btn.classList.add('hidden');
+                    }
+                });
+
+                // 隐藏用户管理功能
+                document.getElementById('nav-user-management').classList.add('hidden');
+                
+                // 隐藏移动端用户管理按钮
+                document.querySelectorAll('.mobile-nav-btn').forEach(btn => {
+                    if (btn.getAttribute('data-target') === 'user-management') {
+                        btn.classList.add('hidden');
+                    }
+                });
+            }
+            
+            // 课程顾问的额外限制
+            if (currentUser.role === 'consultant') {
+                // 不能删除客户
+                const deleteButtons = document.querySelectorAll('.delete-btn');
+                deleteButtons.forEach(btn => {
+                    btn.classList.add('hidden');
+                });
+            }
+        }
+
+        // 退出登录
+        function logout() {
+            currentUser = null;
+            localStorage.removeItem('currentUser');
+            sessionStorage.removeItem('currentUser');
+            showLogin();
+        }
+
+        // 修改密码功能
+        document.addEventListener('DOMContentLoaded', function() {
+            // 修改密码表单提交
+            document.getElementById('change-password-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                changePassword();
+            });
+
+            // 取消修改密码
+            document.getElementById('cancel-change-password').addEventListener('click', function() {
+                switchPage('dashboard');
+            });
+        });
+
+        // 修改密码
+        function changePassword() {
+            const currentPassword = document.getElementById('current-password').value;
+            const newPassword = document.getElementById('new-password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+            const errorElement = document.getElementById('password-error');
+
+            // 隐藏错误提示
+            errorElement.classList.add('hidden');
+
+            // 验证当前密码
+            if (currentPassword !== currentUser.password) {
+                errorElement.textContent = '当前密码错误，请重试。';
+                errorElement.classList.remove('hidden');
+                return;
+            }
+
+            // 验证新密码长度
+            if (newPassword.length < 6) {
+                errorElement.textContent = '新密码长度至少为6个字符。';
+                errorElement.classList.remove('hidden');
+                return;
+            }
+
+            // 验证两次输入的新密码是否一致
+            if (newPassword !== confirmPassword) {
+                errorElement.textContent = '两次输入的新密码不一致，请重试。';
+                errorElement.classList.remove('hidden');
+                return;
+            }
+
+            // 更新用户密码
+            const userIndex = users.findIndex(u => u.username === currentUser.username);
+            if (userIndex !== -1) {
+                users[userIndex].password = newPassword;
+                currentUser.password = newPassword;
+                
+                // 保存更新后的用户数据
+                localStorage.setItem('users', JSON.stringify(users));
+                
+                // 更新当前用户信息
+                if (localStorage.getItem('currentUser')) {
+                    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                } else if (sessionStorage.getItem('currentUser')) {
+                    sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
+                }
+
+                // 显示成功提示
+                showSuccessModal('密码已成功修改');
+                
+                // 重置表单
+                document.getElementById('change-password-form').reset();
+                
+                // 切换到数据概览页面
+                switchPage('dashboard');
+            }
+        }
+
+        // 保存用户数据到本地存储
+        function saveUsers() {
+            localStorage.setItem('users', JSON.stringify(users));
+        }
+
+        // 用户管理功能
+        document.addEventListener('DOMContentLoaded', function() {
+            // 新增用户表单提交
+            document.getElementById('add-user-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                handleAddUser();
+            });
+
+            // 取消新增用户
+            document.getElementById('cancel-add-user').addEventListener('click', function() {
+                switchPage('dashboard');
+            });
+        });
+
+        // 处理新增用户
+        function handleAddUser() {
+            const username = document.getElementById('add-username').value;
+            const password = document.getElementById('add-password').value;
+            const name = document.getElementById('add-name').value;
+            const role = document.getElementById('add-role').value;
+            const errorElement = document.getElementById('add-user-error');
+
+            // 隐藏错误提示
+            errorElement.classList.add('hidden');
+
+            // 验证用户名是否已存在
+            if (users.some(u => u.username === username)) {
+                errorElement.textContent = '用户名已存在，请选择其他用户名。';
+                errorElement.classList.remove('hidden');
+                return;
+            }
+
+            // 验证密码长度
+            if (password.length < 6) {
+                errorElement.textContent = '密码长度至少为6个字符。';
+                errorElement.classList.remove('hidden');
+                return;
+            }
+
+            // 创建新用户
+            const newUser = { username, password, role, name };
+
+            // 添加新用户
+            users.push(newUser);
+            saveUsers();
+
+            // 显示成功提示
+            showSuccessModal('用户添加成功！');
+
+            // 重置表单
+            document.getElementById('add-user-form').reset();
+
+            // 跳转回用户管理页面
+            switchPage('user-management');
+            updateUserManagementPage();
+        }
+
+        // 更新用户管理页面
+        function updateUserManagementPage() {
+            const userTableBody = document.getElementById('user-table-body');
+            userTableBody.innerHTML = '';
+
+            // 只显示非管理员用户
+            const nonAdminUsers = users.filter(user => user.role !== 'admin');
+
+            nonAdminUsers.forEach(user => {
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-gray-50 transition-all-300';
+
+                let roleName = '';
+                switch (user.role) {
+                    case 'user': roleName = '普通用户'; break;
+                    case 'consultant': roleName = '课程顾问'; break;
+                    default: roleName = '未知角色';
+                }
+
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${user.username}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${user.name}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${user.role === 'user' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'}">
+                            ${roleName}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <button class="text-primary hover:text-blue-700 mr-3 edit-user-btn" onclick="editUser('${user.username}')">编辑</button>
+                        <button class="text-danger hover:text-red-700 delete-user-btn" onclick="deleteUser('${user.username}')">删除</button>
+                    </td>
+                `;
+
+                userTableBody.appendChild(row);
+            });
+        }
+
+        // 编辑用户
+        function editUser(username) {
+            const user = users.find(u => u.username === username);
+            if (!user) return;
+
+            // 显示编辑用户模态框
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4';
+            modal.id = 'edit-user-modal';
+
+            modal.innerHTML = `
+                <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-lg font-semibold text-gray-800">编辑用户</h3>
+                        <button id="close-edit-modal" class="text-gray-500 hover:text-gray-700">
+                            <i class="fa fa-times"></i>
+                        </button>
+                    </div>
+                    <form id="edit-user-form" class="space-y-6">
+                        <div>
+                            <label for="edit-username" class="block text-sm font-medium text-gray-700 mb-1">用户名</label>
+                            <input type="text" id="edit-username" value="${user.username}" disabled class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100">
+                        </div>
+                        <div>
+                            <label for="edit-name" class="block text-sm font-medium text-gray-700 mb-1">姓名</label>
+                            <input type="text" id="edit-name" value="${user.name}" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                        </div>
+                        <div>
+                            <label for="edit-role" class="block text-sm font-medium text-gray-700 mb-1">角色</label>
+                            <select id="edit-role" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                                <option value="user" ${user.role === 'user' ? 'selected' : ''}>普通用户</option>
+                                <option value="consultant" ${user.role === 'consultant' ? 'selected' : ''}>课程顾问</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="edit-password" class="block text-sm font-medium text-gray-700 mb-1">密码（留空表示不修改）</label>
+                            <input type="password" id="edit-password" placeholder="留空表示不修改" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                        </div>
+                        <div id="edit-error" class="p-3 bg-red-100 text-red-700 rounded-lg hidden"></div>
+                        <div class="flex justify-end space-x-3">
+                            <button type="button" id="cancel-edit" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-all-300">取消</button>
+                            <button type="submit" class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-blue-700 transition-all-300">保存</button>
+                        </div>
+                    </form>
+                </div>
+            `;
+
+            document.body.appendChild(modal);
+
+            // 关闭模态框
+            document.getElementById('close-edit-modal').addEventListener('click', function() {
+                document.body.removeChild(modal);
+            });
+
+            document.getElementById('cancel-edit').addEventListener('click', function() {
+                document.body.removeChild(modal);
+            });
+
+            // 编辑用户表单提交
+            document.getElementById('edit-user-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const name = document.getElementById('edit-name').value;
+                const role = document.getElementById('edit-role').value;
+                const password = document.getElementById('edit-password').value;
+                const errorElement = document.getElementById('edit-error');
+
+                // 隐藏错误提示
+                errorElement.classList.add('hidden');
+
+                // 验证密码长度
+                if (password && password.length < 6) {
+                    errorElement.textContent = '密码长度至少为6个字符。';
+                    errorElement.classList.remove('hidden');
+                    return;
+                }
+
+                // 更新用户信息
+                const userIndex = users.findIndex(u => u.username === username);
+                if (userIndex !== -1) {
+                    users[userIndex].name = name;
+                    users[userIndex].role = role;
+                    
+                    if (password) {
+                        users[userIndex].password = password;
+                    }
+                    
+                    saveUsers();
+
+                    // 如果当前用户正在编辑自己的信息，更新当前用户对象
+                    if (currentUser && currentUser.username === username) {
+                        currentUser = {...users[userIndex]};
+                        
+                        // 更新本地存储中的当前用户信息
+                        if (localStorage.getItem('currentUser')) {
+                            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                        } else if (sessionStorage.getItem('currentUser')) {
+                            sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
+                        }
+                    }
+
+                    // 更新用户管理页面
+                    updateUserManagementPage();
+
+                    // 显示成功提示
+                    showSuccessModal('用户信息已成功更新');
+
+                    // 关闭模态框
+                    document.body.removeChild(modal);
+
+                    // 如果当前用户正在编辑自己的角色，需要重新登录
+                    if (currentUser && currentUser.username === username) {
+                        setTimeout(() => {
+                            logout();
+                        }, 1500);
+                    }
+                }
+            });
+        }
+
+        // 删除用户
+        function deleteUser(username) {
+            if (confirm('确定要删除此用户吗？此操作不可恢复。')) {
+                const userIndex = users.findIndex(u => u.username === username);
+                if (userIndex !== -1) {
+                    users.splice(userIndex, 1);
+                    saveUsers();
+                    
+                    // 更新用户管理页面
+                    updateUserManagementPage();
+                    
+                    // 显示成功提示
+                    showSuccessModal('用户已成功删除');
+                }
+            }
+        }
+
+        // 显示添加用户模态框
+        function showAddUserModal() {
+            // 显示添加用户模态框
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4';
+            modal.id = 'add-user-modal';
+
+            modal.innerHTML = `
+                <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-lg font-semibold text-gray-800">添加用户</h3>
+                        <button id="close-add-modal" class="text-gray-500 hover:text-gray-700">
+                            <i class="fa fa-times"></i>
+                        </button>
+                    </div>
+                    <form id="add-user-form" class="space-y-6">
+                        <div>
+                            <label for="add-username" class="block text-sm font-medium text-gray-700 mb-1">用户名</label>
+                            <input type="text" id="add-username" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                        </div>
+                        <div>
+                            <label for="add-name" class="block text-sm font-medium text-gray-700 mb-1">姓名</label>
+                            <input type="text" id="add-name" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                        </div>
+                        <div>
+                            <label for="add-role" class="block text-sm font-medium text-gray-700 mb-1">角色</label>
+                            <select id="add-role" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                                <option value="user">普通用户</option>
+                                <option value="consultant">课程顾问</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="add-password" class="block text-sm font-medium text-gray-700 mb-1">密码</label>
+                            <input type="password" id="add-password" required minlength="6" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                            <p class="mt-1 text-xs text-gray-500">密码长度至少为6个字符</p>
+                        </div>
+                        <div id="add-error" class="p-3 bg-red-100 text-red-700 rounded-lg hidden"></div>
+                        <div class="flex justify-end space-x-3">
+                            <button type="button" id="cancel-add" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-all-300">取消</button>
+                            <button type="submit" class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-blue-700 transition-all-300">添加</button>
+                        </div>
+                    </form>
+                </div>
+            `;
+
+            document.body.appendChild(modal);
+
+            // 关闭模态框
+            document.getElementById('close-add-modal').addEventListener('click', function() {
+                document.body.removeChild(modal);
+            });
+
+            document.getElementById('cancel-add').addEventListener('click', function() {
+                document.body.removeChild(modal);
+            });
+
+            // 添加用户表单提交
+            document.getElementById('add-user-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const username = document.getElementById('add-username').value;
+                const name = document.getElementById('add-name').value;
+                const role = document.getElementById('add-role').value;
+                const password = document.getElementById('add-password').value;
+                const errorElement = document.getElementById('add-error');
+
+                // 隐藏错误提示
+                errorElement.classList.add('hidden');
+
+                // 验证用户名是否已存在
+                if (users.some(u => u.username === username)) {
+                    errorElement.textContent = '用户名已存在，请选择其他用户名。';
+                    errorElement.classList.remove('hidden');
+                    return;
+                }
+
+                // 验证密码长度
+                if (password.length < 6) {
+                    errorElement.textContent = '密码长度至少为6个字符。';
+                    errorElement.classList.remove('hidden');
+                    return;
+                }
+
+                // 创建新用户
+                const newUser = {
+                    username,
+                    name,
+                    role,
+                    password
+                };
+
+                // 添加新用户
+                users.push(newUser);
+                saveUsers();
+
+                // 更新用户管理页面
+                updateUserManagementPage();
+
+                // 显示成功提示
+                showSuccessModal('用户已成功添加');
+
+                // 关闭模态框
+                document.body.removeChild(modal);
+            });
+        }
+    </script>
+</body>
+</html>
